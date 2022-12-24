@@ -27,22 +27,21 @@ func main() {
 	app := fiber.New()
 
 	encryptionSecret := getDerivedEncryptionKey()
+	/* jwt middleware */
 	app.Use(jwtware.New(jwtware.Config{
-		// SigningKey:    []byte(NEXTAUTH_SECRET),
 		SigningKey:    encryptionSecret,
 		TokenLookup:   "header:authorization",
 		AuthScheme:    "bearer",
 		SigningMethod: "HS256",
 		ContextKey:    "user",
-		// Claims:        jwt.MapClaims{},
 	}))
+
 	app.Get("/", func(c *fiber.Ctx) error {
-		fmt.Println(c.Locals("user"))
 		user := c.Locals("user").(*jwt.Token)
 		claims := user.Claims.(jwt.MapClaims)
 		name := claims["name"].(string)
 		accessToken := claims["accessToken"].(string)
-		// return c.SendString("Hello, World 👋!")
+		/* return claim information to verify valid token */
 		return c.JSON(fiber.Map{
 			"name":        name,
 			"accessToken": accessToken,

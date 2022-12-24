@@ -13,6 +13,7 @@ const DEFAULT_MAX_AGE = 30 * 24 * 60 * 60 // 30 days
 
 const now = () => (Date.now() / 1000) | 0
 
+/* next-auth key derivation function */
 async function getNextAuthEncryptionKey(secret: string | Buffer) {
   return await hkdf(
     "sha256",
@@ -38,10 +39,12 @@ export default async function handler(
   res: NextApiResponse<Data>
 ) {
   const encryptionSecret = await getNextAuthEncryptionKey(process.env.NEXTAUTH_SECRET as string)
+  /* encrypted jwe token in header */
   const nextEncryptedToken = req.cookies['next-auth.session-token']
   console.log({nextEncryptedToken})
-
+  /* decrypted jwt token */
   const nextToken = await decode({ secret: process.env.NEXTAUTH_SECRET as string, token: nextEncryptedToken })
+  /* sign jwt with signature that will be verified by external api */
   const externalApiToken = await signExternalJWT(nextToken as JWT, encryptionSecret)
 
   const result = await fetch(`${process.env.EXTERNAL_API_ENDPOINT}` as string, {
