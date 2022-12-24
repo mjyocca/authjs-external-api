@@ -2,10 +2,15 @@ import Head from 'next/head'
 import Image from 'next/image'
 import { Inter } from '@next/font/google'
 import styles from '../styles/Home.module.css'
+import useSWR from 'swr';
+import { useSession, signIn, signOut } from "next-auth/react";
 
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
+  const { data: session } = useSession();
+  const { data, error, mutate } = useSWR(session ? ['/api/hello'] : null)
+  console.log({session, data})
   return (
     <>
       <Head>
@@ -37,6 +42,18 @@ export default function Home() {
               />
             </a>
           </div>
+        </div>
+
+        <div>
+          {!session ? <button onClick={() => {
+            signIn()
+          }}>Sign In</button> : <button onClick={() => {
+            signOut()
+          }}>Sign Out</button>}
+        </div>
+
+        <div>
+          <code>{session ? JSON.stringify(session) : ''}</code>
         </div>
 
         <div className={styles.center}>
