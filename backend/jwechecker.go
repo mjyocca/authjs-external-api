@@ -49,6 +49,7 @@ var ConfigDefault = JweConfig{
 func Decode(c *fiber.Ctx, cfg *JweConfig) (*jwt.MapClaims, error) {
 	authHeader := c.Get("Authorization")
 
+	/* check request is valid */
 	if authHeader == "" {
 		return nil, errors.New("authorization header is required")
 	}
@@ -58,7 +59,9 @@ func Decode(c *fiber.Ctx, cfg *JweConfig) (*jwt.MapClaims, error) {
 	if len(tokenString) < 2 {
 		return nil, errors.New("authroization Bearer is required")
 	}
+	/* check request is valid */
 
+	/* parse & decrypt jwe */
 	jwtEncrypted, err := jose.ParseEncrypted(tokenString[1])
 	if err != nil {
 		return nil, errors.New("error parsing encrypted token")
@@ -68,22 +71,17 @@ func Decode(c *fiber.Ctx, cfg *JweConfig) (*jwt.MapClaims, error) {
 	if err != nil {
 		return nil, errors.New("error decrypting token")
 	}
+	/* parse & decrypt jwe */
+
+	/* convert decrypted jwt to claims */
 	token := string(decryptedJWE)
-
-	fmt.Println(token)
-
 	jwtJson := parseMap(token)
-
-	// fmt.Println(jwtJson)
-
 	claims := jwt.MapClaims{}
-
 	for k, value := range jwtJson {
 		claims[k] = value
 	}
 
-	// fmt.Println(claims)
-
+	/* check claims jwt is valid */
 	err = claims.Valid()
 	if err != nil {
 		fmt.Println(err)
@@ -103,7 +101,6 @@ func parseMap(tokenString string) map[string]interface{} {
 }
 
 func Unauthorized(c *fiber.Ctx) error {
-	fmt.Println("Unauthorized")
 	return c.SendStatus(fiber.StatusUnauthorized)
 }
 
@@ -128,13 +125,16 @@ func jweConfigDefault(config ...JweConfig) JweConfig {
 		cfg.Expiry = ConfigDefault.Expiry
 	}
 
+	// Set default context key to retrieve claims via, c.Locals(ContextKey)
 	if cfg.ContextKey == "" {
 		cfg.ContextKey = ConfigDefault.ContextKey
 	}
 
+	// Set decode function
 	if cfg.Decode == nil {
 		cfg.Decode = Decode
 	}
+	// Set unauthorized handler when token is invalid/expired
 	if cfg.Unauthorized == nil {
 		cfg.Unauthorized = Unauthorized
 	}
