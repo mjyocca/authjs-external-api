@@ -11,6 +11,12 @@ export const authOptions = {
     }),
     // ...add more providers here
   ],
+  jwt: {
+    maxAge: 60
+  },
+  session: {
+    maxAge: 60
+  },
   callbacks: {
     async jwt({ token, account, profile }: any) {
       if (account) {

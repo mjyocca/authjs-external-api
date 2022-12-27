@@ -38,19 +38,12 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  const encryptionSecret = await getNextAuthEncryptionKey(process.env.NEXTAUTH_SECRET as string)
-  /* encrypted jwe token in header */
   const nextEncryptedToken = req.cookies['next-auth.session-token']
-  console.log({nextEncryptedToken})
-  /* decrypted jwt token */
-  const nextToken = await decode({ secret: process.env.NEXTAUTH_SECRET as string, token: nextEncryptedToken })
-  /* sign jwt with signature that will be verified by external api */
-  const externalApiToken = await signExternalJWT(nextToken as JWT, encryptionSecret)
 
   const result = await fetch(`${process.env.EXTERNAL_API_ENDPOINT}` as string, {
     method: 'GET',
     headers: {
-      'authorization': `bearer ${externalApiToken}`
+      'Authorization': `Bearer ${nextEncryptedToken}`
     }
   })
   try {
