@@ -16,11 +16,12 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-// should me stored in env variable
-var nextauth_secret = envVariable("NEXTAUTH_SECRET")
-var secret = getDerivedEncryptionKey()
+var nextauth_secret string
 
 func getDerivedEncryptionKey() []byte {
+	if nextauth_secret == "" {
+		nextauth_secret = envVariable("NEXTAUTH_SECRET")
+	}
 	hkdf := hkdf.New(sha256.New, []byte(nextauth_secret), nil, []byte("NextAuth.js Generated Encryption Key"))
 	key := make([]byte, 32)
 	if _, err := io.ReadFull(hkdf, key); err != nil {
@@ -37,25 +38,25 @@ func envVariable(key string) string {
 	return val
 }
 
-type Config struct {
+type AuthConfig struct {
 	Filter       func(c *fiber.Ctx) bool
 	Unauthorized fiber.Handler
-	Decode       func(c *fiber.Ctx, cfg *Config) (*jwt.MapClaims, error)
+	Decode       func(c *fiber.Ctx, cfg *AuthConfig) (*jwt.MapClaims, error)
 	Secret       []byte
 	Expiry       int64
 	ContextKey   string
 }
 
-var defaultConfig = Config{
+var defaultConfig = AuthConfig{
 	Filter:       nil,
 	Decode:       nil,
 	Unauthorized: nil,
-	Secret:       secret,
+	Secret:       nil,
 	Expiry:       60, //60 * 60 * 24 * 30,
 	ContextKey:   "jwtClaims",
 }
 
-func decode(c *fiber.Ctx, cfg *Config) (*jwt.MapClaims, error) {
+func decode(c *fiber.Ctx, cfg *AuthConfig) (*jwt.MapClaims, error) {
 	authHeader := c.Get("Authorization")
 
 	/* check request is valid */
@@ -113,12 +114,17 @@ func unauthorized(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusUnauthorized)
 }
 
-func configDefaults(config ...Config) Config {
+func configDefaults(config ...AuthConfig) AuthConfig {
 	if len(config) < 1 {
 		return defaultConfig
 	}
 	// Override default config
 	cfg := config[0]
+
+	// initialize default secret
+	if defaultConfig.Secret == nil {
+		defaultConfig.Secret = getDerivedEncryptionKey()
+	}
 
 	// Set default values if not passed
 	if cfg.Filter == nil {
@@ -150,7 +156,7 @@ func configDefaults(config ...Config) Config {
 	return cfg
 }
 
-func Auth(config Config) fiber.Handler {
+func Auth(config AuthConfig) fiber.Handler {
 	cfg := configDefaults(config)
 
 	return func(c *fiber.Ctx) error {

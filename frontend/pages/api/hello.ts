@@ -40,7 +40,7 @@ export default async function handler(
 ) {
   const nextEncryptedToken = req.cookies['next-auth.session-token']
 
-  const result = await fetch(`${process.env.EXTERNAL_API_ENDPOINT}` as string, {
+  const result = await fetch(`${process.env.EXTERNAL_API_ENDPOINT}/user` as string, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${nextEncryptedToken}`

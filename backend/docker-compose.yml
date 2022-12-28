@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  api:
+    container_name: go-api
+    build:
+      dockerfile: docker/Dockerfile.dev
+      context: .
+      target: dev
+    stdin_open: true
+    environment:
+      DB_USERNAME: "postgres"
+      DB_PASSWORD: "postgres"
+      DB_HOST: "fullstack-postgres"
+      DB_PORT: "5432"
+      DB_NAME: "postgres"
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/opt/app/api
+    networks:
+      - fullstack
+
+  fullstack-postgres: 
+    image: postgres:12.2-alpine
+    container_name: "db-postgres"
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - DATABASE_HOST=fullstack-postgres
+    networks:
+      - fullstack
+    volumes:
+      - database_postgres:/var/lib/postgresql/data
+
+volumes:
+  database_postgres:
+
+networks:
+  fullstack:
+    driver: bridge

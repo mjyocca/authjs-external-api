@@ -2,21 +2,23 @@ package main
 
 import (
 	fiber "github.com/gofiber/fiber/v2"
+	"github.com/mjyocca/authjs-external-api/backend/controllers"
 	"github.com/mjyocca/authjs-external-api/backend/initializers"
-	middleware "github.com/mjyocca/authjs-external-api/backend/middleware"
+	"github.com/mjyocca/authjs-external-api/backend/middleware"
 )
 
 func init() {
 	initializers.LoadEnvVariables()
 	initializers.ConnectToDatabase()
+	initializers.RunDBMigrations()
 }
 
 func main() {
 
 	app := fiber.New()
 
-	/* jwt middleware */
-	app.Use(middleware.Auth(middleware.Config{}))
+	/* jwt auth middleware */
+	app.Use(middleware.Auth(middleware.AuthConfig{}))
 
 	/* routes */
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -26,6 +28,8 @@ func main() {
 			"data": "Hello, World!",
 		})
 	})
+
+	app.Get("/user", controllers.UserIndex)
 
 	app.Listen(":8000")
 }
