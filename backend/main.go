@@ -20,16 +20,15 @@ func main() {
 	/* jwt auth middleware */
 	app.Use(middleware.Auth(middleware.AuthConfig{}))
 
-	/* routes */
-	app.Get("/", func(c *fiber.Ctx) error {
-		// claimData := c.Locals("jwtClaims")
-		// fmt.Println(claimData)
-		return c.JSON(fiber.Map{
-			"data": "Hello, World!",
-		})
-	})
+	api := app.Group("/api")
 
-	app.Get("/user", controllers.UserIndex)
+	/* routes */
+	api.Route("/adapter", func(route fiber.Router) {
+		route.Get("/user", controllers.GetUser)
+		route.Post("/user", controllers.CreateUser)
+		route.Patch("/user", controllers.LinkAccount)
+	})
+	api.Get("/user", controllers.UserIndex)
 
 	app.Listen(":8000")
 }

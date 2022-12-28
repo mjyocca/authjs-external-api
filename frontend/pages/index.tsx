@@ -9,8 +9,8 @@ const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
   const { data: session } = useSession();
-  const { data, error, mutate } = useSWR(session ? ['/api/hello'] : null)
-  console.log({session, data})
+  // const { data, error, mutate } = useSWR(session ? ['/api/hello'] : null)
+  console.log({session})
   return (
     <>
       <Head>
@@ -54,6 +54,22 @@ export default function Home() {
 
         <div>
           <code>{session ? JSON.stringify(session) : ''}</code>
+        </div>
+
+        <div>
+          {session && <button onClick={async () => {
+            const body = {
+              name: session?.user?.name,
+              email: session?.user?.email,
+            }
+            await fetch(`/api/adapter/user`, {
+              headers: {
+                'content-type': "application/json"
+              },
+              method: "POST",
+              body: JSON.stringify(body)
+            })
+          }}>Create User</button>}
         </div>
 
         <div className={styles.center}>

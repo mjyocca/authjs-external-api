@@ -11,12 +11,6 @@ export const authOptions = {
     }),
     // ...add more providers here
   ],
-  jwt: {
-    maxAge: 60
-  },
-  session: {
-    maxAge: 60
-  },
   callbacks: {
     async jwt({ token, account, profile }: any) {
       if (account) {
@@ -30,7 +24,7 @@ export const authOptions = {
       return token
     },
     async session({ session, token, user }: any) {
-      // console.log({ session, token, user })
+      console.log({ session, token, user })
       return session;
     }
   }

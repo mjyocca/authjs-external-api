@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/go-jose/go-jose/v3"
@@ -18,24 +19,18 @@ import (
 
 var nextauth_secret string
 
-func getDerivedEncryptionKey() []byte {
-	if nextauth_secret == "" {
-		nextauth_secret = envVariable("NEXTAUTH_SECRET")
-	}
-	hkdf := hkdf.New(sha256.New, []byte(nextauth_secret), nil, []byte("NextAuth.js Generated Encryption Key"))
-	key := make([]byte, 32)
-	if _, err := io.ReadFull(hkdf, key); err != nil {
-		panic(err)
-	}
-	return key
-}
-
-func envVariable(key string) string {
-	val := os.Getenv(key)
-	if val == "" {
-		log.Fatalf("Error getting env variable %+s", key)
-	}
-	return val
+type TokenClaim struct {
+	Name              string
+	Email             string
+	Picture           string
+	Sub               string
+	AccessToken       string
+	Id                int64
+	ProviderAccountId string
+	Provider          string
+	Iat               int64
+	Exp               int64
+	Jti               string
 }
 
 type AuthConfig struct {
@@ -52,8 +47,29 @@ var defaultConfig = AuthConfig{
 	Decode:       nil,
 	Unauthorized: nil,
 	Secret:       nil,
-	Expiry:       60, //60 * 60 * 24 * 30,
-	ContextKey:   "jwtClaims",
+	Expiry:       60 * 60, //60 * 60 * 24 * 30,
+	ContextKey:   "user",
+}
+
+func Auth(config AuthConfig) fiber.Handler {
+	cfg := configDefaults(config)
+
+	return func(c *fiber.Ctx) error {
+		if cfg.Filter != nil && cfg.Filter(c) {
+			fmt.Println("Middleware was skipped")
+			return c.Next()
+		}
+		fmt.Println("Middleware was run")
+
+		claims, err := cfg.Decode(c, &cfg)
+
+		if err == nil {
+			c.Locals(cfg.ContextKey, *claims)
+			return c.Next()
+		}
+
+		return cfg.Unauthorized(c)
+	}
 }
 
 func decode(c *fiber.Ctx, cfg *AuthConfig) (*jwt.MapClaims, error) {
@@ -84,12 +100,8 @@ func decode(c *fiber.Ctx, cfg *AuthConfig) (*jwt.MapClaims, error) {
 	/* parse & decrypt jwe */
 
 	/* convert decrypted jwt to claims */
-	token := string(decryptedJWE)
-	jwtJson := parseMap(token)
 	claims := jwt.MapClaims{}
-	for k, value := range jwtJson {
-		claims[k] = value
-	}
+	parseClaim(string(decryptedJWE), claims)
 
 	/* check claims jwt is valid */
 	err = claims.Valid()
@@ -101,13 +113,39 @@ func decode(c *fiber.Ctx, cfg *AuthConfig) (*jwt.MapClaims, error) {
 	return &claims, nil
 }
 
-func parseMap(tokenString string) map[string]interface{} {
-	m := map[string]interface{}{}
-	err := json.Unmarshal([]byte(tokenString), &m)
+func parseClaim(tokenString string, claims jwt.MapClaims) {
+	token := TokenClaim{}
+	err := json.Unmarshal([]byte(tokenString), &token)
 	if err != nil {
 		panic(err)
 	}
-	return m
+	values := reflect.ValueOf(token)
+	typesOf := values.Type()
+	for i := 0; i < values.NumField(); i++ {
+		if values.Field(i).Interface() != nil {
+			claims[typesOf.Field(i).Name] = values.Field(i).Interface()
+		}
+	}
+}
+
+func getDerivedEncryptionKey() []byte {
+	if nextauth_secret == "" {
+		nextauth_secret = envVariable("NEXTAUTH_SECRET")
+	}
+	hkdf := hkdf.New(sha256.New, []byte(nextauth_secret), nil, []byte("NextAuth.js Generated Encryption Key"))
+	key := make([]byte, 32)
+	if _, err := io.ReadFull(hkdf, key); err != nil {
+		panic(err)
+	}
+	return key
+}
+
+func envVariable(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("Error getting env variable %+s", key)
+	}
+	return val
 }
 
 func unauthorized(c *fiber.Ctx) error {
@@ -154,25 +192,4 @@ func configDefaults(config ...AuthConfig) AuthConfig {
 		cfg.Unauthorized = unauthorized
 	}
 	return cfg
-}
-
-func Auth(config AuthConfig) fiber.Handler {
-	cfg := configDefaults(config)
-
-	return func(c *fiber.Ctx) error {
-		if cfg.Filter != nil && cfg.Filter(c) {
-			fmt.Println("Middleware was skipped")
-			return c.Next()
-		}
-		fmt.Println("Middleware was run")
-
-		claims, err := cfg.Decode(c, &cfg)
-
-		if err == nil {
-			c.Locals(cfg.ContextKey, *claims)
-			return c.Next()
-		}
-
-		return cfg.Unauthorized(c)
-	}
 }
