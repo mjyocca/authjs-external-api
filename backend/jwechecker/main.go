@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
 	"github.com/go-jose/go-jose/v3"
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/hkdf"
 )
 
@@ -29,9 +31,15 @@ func getDerivedEncryptionKey() []byte {
 }
 
 func envVariable(key string, fallback string) string {
-	val := os.Getenv(key)
+	envFileName := ".env.local"
+	err := godotenv.Load(envFileName)
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
+	val := os.Getenv(key)
 	if val == "" {
+		fmt.Printf("assigning fallback variable %+s", key)
 		val = fallback
 	}
 	return val
