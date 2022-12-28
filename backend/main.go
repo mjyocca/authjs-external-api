@@ -3,7 +3,7 @@ package main
 import (
 	fiber "github.com/gofiber/fiber/v2"
 	"github.com/mjyocca/authjs-external-api/backend/initializers"
-	auth "github.com/mjyocca/authjs-external-api/backend/internal/auth"
+	middleware "github.com/mjyocca/authjs-external-api/backend/middleware"
 )
 
 func init() {
@@ -16,9 +16,7 @@ func main() {
 	app := fiber.New()
 
 	/* jwt middleware */
-	app.Use(
-		auth.NewConfig(auth.Config{}),
-	)
+	app.Use(middleware.Auth(middleware.Config{}))
 
 	/* routes */
 	app.Get("/", func(c *fiber.Ctx) error {

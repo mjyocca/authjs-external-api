@@ -1,4 +1,4 @@
-package auth
+package middleware
 
 import (
 	"crypto/sha256"
@@ -17,11 +17,11 @@ import (
 )
 
 // should me stored in env variable
-var NEXTAUTH_SECRET = envVariable("NEXTAUTH_SECRET")
+var nextauth_secret = envVariable("NEXTAUTH_SECRET")
 var secret = getDerivedEncryptionKey()
 
 func getDerivedEncryptionKey() []byte {
-	hkdf := hkdf.New(sha256.New, []byte(NEXTAUTH_SECRET), nil, []byte("NextAuth.js Generated Encryption Key"))
+	hkdf := hkdf.New(sha256.New, []byte(nextauth_secret), nil, []byte("NextAuth.js Generated Encryption Key"))
 	key := make([]byte, 32)
 	if _, err := io.ReadFull(hkdf, key); err != nil {
 		panic(err)
@@ -46,7 +46,7 @@ type Config struct {
 	ContextKey   string
 }
 
-var ConfigDefault = Config{
+var defaultConfig = Config{
 	Filter:       nil,
 	Decode:       nil,
 	Unauthorized: nil,
@@ -55,7 +55,7 @@ var ConfigDefault = Config{
 	ContextKey:   "jwtClaims",
 }
 
-func Decode(c *fiber.Ctx, cfg *Config) (*jwt.MapClaims, error) {
+func decode(c *fiber.Ctx, cfg *Config) (*jwt.MapClaims, error) {
 	authHeader := c.Get("Authorization")
 
 	/* check request is valid */
@@ -109,49 +109,49 @@ func parseMap(tokenString string) map[string]interface{} {
 	return m
 }
 
-func Unauthorized(c *fiber.Ctx) error {
+func unauthorized(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusUnauthorized)
 }
 
-func configDefault(config ...Config) Config {
+func configDefaults(config ...Config) Config {
 	if len(config) < 1 {
-		return ConfigDefault
+		return defaultConfig
 	}
 	// Override default config
 	cfg := config[0]
 
 	// Set default values if not passed
 	if cfg.Filter == nil {
-		cfg.Filter = ConfigDefault.Filter
+		cfg.Filter = defaultConfig.Filter
 	}
 	// Set default secret if not passed
 	if len(cfg.Secret) < 1 {
-		cfg.Secret = ConfigDefault.Secret
+		cfg.Secret = defaultConfig.Secret
 	}
 
 	// Set default expiry if not passed
 	if cfg.Expiry == 0 {
-		cfg.Expiry = ConfigDefault.Expiry
+		cfg.Expiry = defaultConfig.Expiry
 	}
 
 	// Set default context key to retrieve claims via, c.Locals(ContextKey)
 	if cfg.ContextKey == "" {
-		cfg.ContextKey = ConfigDefault.ContextKey
+		cfg.ContextKey = defaultConfig.ContextKey
 	}
 
 	// Set decode function
 	if cfg.Decode == nil {
-		cfg.Decode = Decode
+		cfg.Decode = decode
 	}
 	// Set unauthorized handler when token is invalid/expired
 	if cfg.Unauthorized == nil {
-		cfg.Unauthorized = Unauthorized
+		cfg.Unauthorized = unauthorized
 	}
 	return cfg
 }
 
-func NewConfig(config Config) fiber.Handler {
-	cfg := configDefault(config)
+func Auth(config Config) fiber.Handler {
+	cfg := configDefaults(config)
 
 	return func(c *fiber.Ctx) error {
 		if cfg.Filter != nil && cfg.Filter(c) {
