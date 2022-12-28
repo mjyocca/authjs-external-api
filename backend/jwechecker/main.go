@@ -1,4 +1,4 @@
-package main
+package jwechecker
 
 import (
 	"crypto/sha256"
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/go-jose/go-jose/v3"
@@ -15,7 +16,8 @@ import (
 )
 
 // should me stored in env variable
-const NEXTAUTH_SECRET = "LnydL9vQ0oAOh8otMc5dDaOtSmHIPNKyKNlB/y7br5M="
+var NEXTAUTH_SECRET = envVariable("NEXTAUTH_SECRET", "LnydL9vQ0oAOh8otMc5dDaOtSmHIPNKyKNlB/y7br5M=")
+var secret = getDerivedEncryptionKey()
 
 func getDerivedEncryptionKey() []byte {
 	hkdf := hkdf.New(sha256.New, []byte(NEXTAUTH_SECRET), nil, []byte("NextAuth.js Generated Encryption Key"))
@@ -26,18 +28,25 @@ func getDerivedEncryptionKey() []byte {
 	return key
 }
 
-var secret = getDerivedEncryptionKey()
+func envVariable(key string, fallback string) string {
+	val := os.Getenv(key)
 
-type JweConfig struct {
+	if val == "" {
+		val = fallback
+	}
+	return val
+}
+
+type Config struct {
 	Filter       func(c *fiber.Ctx) bool
 	Unauthorized fiber.Handler
-	Decode       func(c *fiber.Ctx, cfg *JweConfig) (*jwt.MapClaims, error)
+	Decode       func(c *fiber.Ctx, cfg *Config) (*jwt.MapClaims, error)
 	Secret       []byte
 	Expiry       int64
 	ContextKey   string
 }
 
-var ConfigDefault = JweConfig{
+var ConfigDefault = Config{
 	Filter:       nil,
 	Decode:       nil,
 	Unauthorized: nil,
@@ -46,7 +55,7 @@ var ConfigDefault = JweConfig{
 	ContextKey:   "jwtClaims",
 }
 
-func Decode(c *fiber.Ctx, cfg *JweConfig) (*jwt.MapClaims, error) {
+func Decode(c *fiber.Ctx, cfg *Config) (*jwt.MapClaims, error) {
 	authHeader := c.Get("Authorization")
 
 	/* check request is valid */
@@ -104,7 +113,7 @@ func Unauthorized(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusUnauthorized)
 }
 
-func jweConfigDefault(config ...JweConfig) JweConfig {
+func configDefault(config ...Config) Config {
 	if len(config) < 1 {
 		return ConfigDefault
 	}
@@ -141,8 +150,8 @@ func jweConfigDefault(config ...JweConfig) JweConfig {
 	return cfg
 }
 
-func NewJweConfig(config JweConfig) fiber.Handler {
-	cfg := jweConfigDefault(config)
+func NewConfig(config Config) fiber.Handler {
+	cfg := configDefault(config)
 
 	return func(c *fiber.Ctx) error {
 		if cfg.Filter != nil && cfg.Filter(c) {

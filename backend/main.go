@@ -2,6 +2,7 @@ package main
 
 import (
 	fiber "github.com/gofiber/fiber/v2"
+	jwechecker "github.com/mjyocca/authjs-external-api/jwechecker"
 )
 
 func main() {
@@ -9,7 +10,7 @@ func main() {
 
 	/* jwt middleware */
 	app.Use(
-		NewJweConfig(JweConfig{}),
+		jwechecker.NewConfig(jwechecker.Config{}),
 	)
 
 	/* routes */
