@@ -1,4 +1,4 @@
-package jwechecker
+package auth
 
 import (
 	"crypto/sha256"
