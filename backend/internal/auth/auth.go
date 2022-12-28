@@ -12,13 +12,12 @@ import (
 
 	"github.com/go-jose/go-jose/v3"
 	fiber "github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/joho/godotenv"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/hkdf"
 )
 
 // should me stored in env variable
-var NEXTAUTH_SECRET = envVariable("NEXTAUTH_SECRET", "LnydL9vQ0oAOh8otMc5dDaOtSmHIPNKyKNlB/y7br5M=")
+var NEXTAUTH_SECRET = envVariable("NEXTAUTH_SECRET")
 var secret = getDerivedEncryptionKey()
 
 func getDerivedEncryptionKey() []byte {
@@ -30,17 +29,10 @@ func getDerivedEncryptionKey() []byte {
 	return key
 }
 
-func envVariable(key string, fallback string) string {
-	envFileName := ".env.local"
-	err := godotenv.Load(envFileName)
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
+func envVariable(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
-		fmt.Printf("assigning fallback variable %+s", key)
-		val = fallback
+		log.Fatalf("Error getting env variable %+s", key)
 	}
 	return val
 }

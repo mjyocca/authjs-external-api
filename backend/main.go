@@ -2,10 +2,17 @@ package main
 
 import (
 	fiber "github.com/gofiber/fiber/v2"
-	auth "github.com/mjyocca/authjs-external-api/internal/auth"
+	"github.com/mjyocca/authjs-external-api/backend/initializers"
+	auth "github.com/mjyocca/authjs-external-api/backend/internal/auth"
 )
 
+func init() {
+	initializers.LoadEnvVariables()
+	initializers.ConnectToDatabase()
+}
+
 func main() {
+
 	app := fiber.New()
 
 	/* jwt middleware */
