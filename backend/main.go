@@ -20,9 +20,9 @@ func main() {
 	/* jwt auth middleware */
 	app.Use(middleware.Auth(middleware.AuthConfig{}))
 
-	api := app.Group("/api")
+	api := app.Group("/api", middleware.Adapter)
 
-	/* routes */
+	/* adapter routes */
 	api.Route("/adapter", func(route fiber.Router) {
 		route.Get("/user", controllers.GetUser)
 		route.Post("/user", controllers.CreateUser)

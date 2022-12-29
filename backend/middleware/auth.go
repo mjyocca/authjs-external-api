@@ -31,6 +31,7 @@ type TokenClaim struct {
 	Iat               int64
 	Exp               int64
 	Jti               string
+	Role              string
 }
 
 type AuthConfig struct {
