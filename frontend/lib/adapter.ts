@@ -75,9 +75,14 @@ export function MyAdapter(config: AdapterConfig): Adapter {
     },
     async getUserByAccount({ providerAccountId, provider }) {
       log('adapter.getUserByAccount', { providerAccountId, provider });
-      const result = await client(`api/adapter/user?accountId=${encodeURIComponent(providerAccountId)}`, {
-        method: 'GET',
-      });
+      const result = await client(
+        `api/adapter/user?accountId=${encodeURIComponent(providerAccountId)}&providerType=${encodeURIComponent(
+          provider
+        )}`,
+        {
+          method: 'GET',
+        }
+      );
       log({ result });
 
       if (result.msg == 'Not Found') return null;

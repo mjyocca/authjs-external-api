@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/mjyocca/authjs-external-api/backend/initializers"
 	"github.com/mjyocca/authjs-external-api/backend/models"
 )
@@ -52,10 +53,16 @@ func GetUserAdapter(c *fiber.Ctx) error {
 	userId := c.Query("userId")
 	email := c.Query("email")
 	account := c.Query("accountId")
+	providerType := c.Query("providerType")
+
+	externalId, err := uuid.Parse(userId)
+	if err != nil {
+		return c.JSON(fiber.Map{"msg": "server error"})
+	}
 
 	user := models.User{}
 	if userId != "" {
-		initializers.DB.First(&user, userId)
+		initializers.DB.Where(&models.User{ExternalID: externalId}).First(&user)
 		if user == (models.User{}) {
 			return c.JSON(fiber.Map{"msg": "Not Found"})
 		}
@@ -71,7 +78,9 @@ func GetUserAdapter(c *fiber.Ctx) error {
 	}
 
 	if account != "" {
-		initializers.DB.Where(&models.User{GithubId: account}).First(&user)
+		if providerType == "github" {
+			initializers.DB.Where(&models.User{GithubId: account}).First(&user)
+		}
 		if user == (models.User{}) {
 			return c.JSON(fiber.Map{"msg": "Not Found"})
 		}
@@ -110,7 +119,7 @@ func LinkAccountAdapter(c *fiber.Ctx) error {
 	/* user is not found */
 	if user == (models.User{}) {
 		return c.JSON(fiber.Map{
-			"msg": "User not found",
+			"msg": "Not Found",
 		})
 	}
 
