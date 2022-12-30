@@ -54,7 +54,7 @@ export function MyAdapter(config: AdapterConfig): Adapter {
     },
     async getUser(id) {
       log('adapter.getUser', { id });
-      const result = await client(`api/adapter/user?userId=${encodeURIComponent(id)}`, {
+      const result = await client(`api/adapter/user?id=${encodeURIComponent(id)}`, {
         method: 'GET',
       });
       log({ result });
@@ -75,7 +75,7 @@ export function MyAdapter(config: AdapterConfig): Adapter {
     async getUserByAccount({ providerAccountId, provider }) {
       log('adapter.getUserByAccount', { providerAccountId, provider });
       const result = await client(
-        `api/adapter/user?accountId=${encodeURIComponent(providerAccountId)}&providerType=${encodeURIComponent(
+        `api/adapter/user?providerId=${encodeURIComponent(providerAccountId)}&providerType=${encodeURIComponent(
           provider
         )}`,
         {

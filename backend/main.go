@@ -5,6 +5,7 @@ import (
 	"github.com/mjyocca/authjs-external-api/backend/controllers"
 	"github.com/mjyocca/authjs-external-api/backend/initializers"
 	"github.com/mjyocca/authjs-external-api/backend/middleware"
+	store "github.com/mjyocca/authjs-external-api/backend/stores"
 )
 
 func init() {
@@ -17,10 +18,14 @@ func main() {
 
 	app := fiber.New()
 
+	/* create stores */
+	userStore := store.NewUserStore(initializers.DB)
+
+	/* init handler */
+	handler := controllers.NewHandler(userStore)
+
 	/* public routes */
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.SendStatus(200)
-	})
+	app.Get("/health", handler.HealthCheck)
 
 	/* protected ~ jwt auth middleware */
 	api := app.Group("/api", middleware.Auth(middleware.AuthConfig{}))
@@ -28,14 +33,14 @@ func main() {
 
 	/* NextAuth Adapter routes */
 	nextAuthAdapter.Route("/", func(route fiber.Router) {
-		route.Get("/user", controllers.GetUserAdapter)
-		route.Post("/user", controllers.CreateUserAdapter)
-		route.Patch("/user", controllers.LinkAccountAdapter)
+		route.Get("/user", handler.GetUserAdapter)
+		route.Post("/user", handler.CreateUserAdapter)
+		route.Patch("/user", handler.LinkAccountAdapter)
 	})
 
 	/* API routes */
 	api.Route("/", func(route fiber.Router) {
-		api.Get("/user", controllers.UserIndex)
+		api.Get("/user", handler.CurrentUser)
 	})
 
 	app.Use(middleware.NotFound)

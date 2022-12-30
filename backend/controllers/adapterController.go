@@ -1,119 +1,91 @@
 package controllers
 
 import (
-	"fmt"
-	"log"
+	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
-	"github.com/mjyocca/authjs-external-api/backend/initializers"
-	"github.com/mjyocca/authjs-external-api/backend/models"
+	model "github.com/mjyocca/authjs-external-api/backend/models"
 )
 
-type createUser struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Image string `json:"image"`
+// Next-Auth/Authjs Adapter function
+func (h *Handler) CreateUserAdapter(c *fiber.Ctx) error {
+	var u model.User
+	req := &userCreateRequest{}
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
+	}
+	existingUser, _ := h.userStore.GetByEmail(req.User.Email)
+	if existingUser != (&model.User{}) {
+		return c.Status(http.StatusAlreadyReported).JSON(&existingUser)
+	}
+	if err := h.userStore.Create(&u); err != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
+	}
+	return c.Status(http.StatusCreated).JSON(userResponse(&u))
 }
 
-func CreateUserAdapter(c *fiber.Ctx) error {
-	log.Println("adapter CreateUser")
-
-	u := new(createUser)
-	if err := c.BodyParser(u); err != nil {
-		return err
-	}
-
-	/* If already exists return existing user */
-	existingUser := models.User{}
-	initializers.DB.Where(&models.User{Email: u.Email}).First(&existingUser)
-
-	if existingUser != (models.User{}) {
-		fmt.Println("Existing User: ", existingUser)
-		return c.JSON(fiber.Map{
-			"id":    existingUser.ID,
-			"email": existingUser.Email,
-		})
-	}
-
-	log.Println("Creating new user")
-	user := models.User{Name: u.Name, Email: u.Email, Image: u.Image}
-	initializers.DB.Create(&user)
-
-	return c.JSON(user)
-}
-
-/* options: byId, byEmail, byAccount */
-func GetUserAdapter(c *fiber.Ctx) error {
-	log.Println("adapter GetUser")
-
-	userId := c.Query("userId")
+// Next-Auth/Authjs Adapter function
+func (h *Handler) GetUserAdapter(c *fiber.Ctx) error {
+	// query params
+	userId := c.Query("id")
 	email := c.Query("email")
-	account := c.Query("accountId")
+	providerId := c.Query("providerId")
+	providerType := c.Query("providerType")
 
-	user := models.User{}
+	// or conditions to search by
+	conditions := map[string]interface{}{}
 	if userId != "" {
-		externalId, err := uuid.Parse(userId)
-		if err != nil {
-			return c.JSON(errorResponse("server error"))
-		}
-		initializers.DB.Where(&models.User{ExternalID: externalId}).First(&user)
-		if user == (models.User{}) {
-			return c.JSON(notFoundResponse())
-		}
-		return c.JSON(userResponse(&user))
+		conditions["ExternalID"] = userId
 	}
-
 	if email != "" {
-		initializers.DB.Where(&models.User{Email: email}).First(&user)
-		if user == (models.User{}) {
-			return c.JSON(notFoundResponse())
-		}
-		return c.JSON(userResponse(&user))
+		conditions["Email"] = email
+	}
+	if providerId != "" && providerType != "" {
+		conditions[providerType] = providerId
+	}
+	u, err := h.userStore.GetUserByORConditions(conditions)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(errorResponse("internal server error"))
+	}
+	if u == nil {
+		return c.Status(http.StatusForbidden).JSON(errorResponse("access is forbidden"))
 	}
 
-	if account != "" {
-		// to-do: need to add checks for provider type
-		initializers.DB.Where(&models.User{GithubId: account}).First(&user)
-		if user == (models.User{}) {
-			return c.JSON(notFoundResponse())
-		}
-		return c.JSON(userResponse(&user))
-	}
-
-	return c.JSON(notFoundResponse())
+	return c.Status(http.StatusFound).JSON(userResponse(u))
 }
 
-type linkAccountPayload struct {
-	Provider          string
-	Type              string
-	ProviderAccountId string
-	AccessToken       string `json:"access_token"`
-	TokenType         string `json:"token_type"`
-	Scope             string
-	UserId            int64 `json:"userId"`
-}
-
-func LinkAccountAdapter(c *fiber.Ctx) error {
-	log.Println("adapter LinkAccount")
-	link := new(linkAccountPayload)
-	if err := c.BodyParser(link); err != nil {
-		return err
+// Next-Auth/Authjs Adapter function
+func (h *Handler) LinkAccountAdapter(c *fiber.Ctx) error {
+	req := &userLinkAccountRequest{}
+	if err := c.BodyParser(req); err != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
 	}
 
-	user := models.User{}
-	initializers.DB.First(&user, link.UserId)
-
-	/* user is not found */
-	if user == (models.User{}) {
-		return c.JSON(fiber.Map{
-			"msg": "Not Found",
-		})
+	// parse user id to uuid format
+	userId, err := getUUID(req.UserId)
+	if err != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
 	}
 
-	/* update current user with provider link */
-	user.GithubId = link.ProviderAccountId
-	initializers.DB.Save(&user)
+	// get existing user from database
+	user, err := h.userStore.GetByExternalID(userId)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(errorResponse("internal server error"))
+	}
+	if user == nil {
+		return c.Status(http.StatusNotFound).JSON(notFoundResponse())
+	}
 
-	return c.JSON(userResponse(&user))
+	// update user field(s)
+	switch provider := req.Provider; provider {
+	case "Github":
+		user.GithubId = req.ProviderAccountId
+		// case "Google":
+	}
+
+	if err := h.userStore.Update(user); err != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
+	}
+
+	return c.Status(http.StatusOK).JSON(userResponse(user))
 }

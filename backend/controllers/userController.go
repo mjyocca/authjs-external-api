@@ -1,21 +1,26 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/mjyocca/authjs-external-api/backend/initializers"
-	"github.com/mjyocca/authjs-external-api/backend/models"
 )
 
-func UserIndex(c *fiber.Ctx) error {
+func (h *Handler) CurrentUser(c *fiber.Ctx) error {
 	claims := c.Locals("user").(jwt.MapClaims)
-	providerId := claims["ProviderAccountId"].(string)
-	providerType := claims["Provider"].(string)
 
-	user := new(models.User)
-	if providerType == "github" {
-		initializers.DB.Find(&user, "github_id = ?", providerId)
+	userId, err := getUUID(claims["Id"].(string))
+	if err != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
 	}
 
-	return c.JSON(userResponse(user))
+	user, err := h.userStore.GetByExternalID(userId)
+	if err != nil {
+		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
+	}
+	if user != nil {
+		return c.Status(http.StatusForbidden).JSON(errorResponse("access is forbidden"))
+	}
+	return c.Status(http.StatusFound).JSON(userResponse(user))
 }
