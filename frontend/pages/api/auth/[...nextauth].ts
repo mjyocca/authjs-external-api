@@ -25,15 +25,16 @@ export const authOptions: NextAuthOptions = {
   },
   jwt: jwtOptions,
   callbacks: {
-    async jwt(jwt: any) {
-      log('callback.jwt.account', { jwt });
-      const { token, account, profile } = jwt;
+    jwt: async ({ token, user, account, profile, isNewUser }) => {
+      log('callback.jwt', { token, user, account, profile, isNewUser });
       if (account) {
-        log('callback.jwt.account', { token, account, profile });
+        log('callback.jwt.account');
         token.accessToken = account.access_token;
-        token.id = profile.id;
         token.providerAccountId = account.providerAccountId;
         token.provider = account.provider;
+      }
+      if (user) {
+        token.id = user.id;
       }
       return token;
     },

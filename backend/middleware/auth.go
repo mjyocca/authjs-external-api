@@ -25,7 +25,7 @@ type TokenClaim struct {
 	Picture           string
 	Sub               string
 	AccessToken       string
-	Id                int64
+	Id                string
 	ProviderAccountId string
 	Provider          string
 	Iat               int64
