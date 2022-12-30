@@ -33,6 +33,6 @@ func ConnectToDatabase() {
 	fmt.Println("Connection Opened to Database")
 }
 
-func RunDBMigrations() {
+func AutoMigrate() {
 	DB.AutoMigrate(&models.User{})
 }
