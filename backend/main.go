@@ -17,18 +17,28 @@ func main() {
 
 	app := fiber.New()
 
-	/* jwt auth middleware */
-	app.Use(middleware.Auth(middleware.AuthConfig{}))
+	/* public routes */
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.SendStatus(200)
+	})
 
-	api := app.Group("/api", middleware.Adapter)
+	/* protected ~ jwt auth middleware */
+	api := app.Group("/api", middleware.Auth(middleware.AuthConfig{}))
+	nextAuthAdapter := api.Group("/adapter", middleware.Adapter)
 
-	/* adapter routes */
-	api.Route("/adapter", func(route fiber.Router) {
+	/* NextAuth Adapter routes */
+	nextAuthAdapter.Route("/", func(route fiber.Router) {
 		route.Get("/user", controllers.GetUser)
 		route.Post("/user", controllers.CreateUser)
 		route.Patch("/user", controllers.LinkAccount)
 	})
-	api.Get("/user", controllers.UserIndex)
+
+	/* API routes */
+	api.Route("/", func(route fiber.Router) {
+		api.Get("/user", controllers.UserIndex)
+	})
+
+	app.Use(middleware.NotFound)
 
 	app.Listen(":8000")
 }

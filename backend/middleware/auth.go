@@ -101,8 +101,7 @@ func decode(c *fiber.Ctx, cfg *AuthConfig) (*jwt.MapClaims, error) {
 	/* parse & decrypt jwe */
 
 	/* convert decrypted jwt to claims */
-	claims := jwt.MapClaims{}
-	parseClaim(string(decryptedJWE), claims)
+	claims := parseClaim(string(decryptedJWE))
 
 	/* check claims jwt is valid */
 	err = claims.Valid()
@@ -114,7 +113,8 @@ func decode(c *fiber.Ctx, cfg *AuthConfig) (*jwt.MapClaims, error) {
 	return &claims, nil
 }
 
-func parseClaim(tokenString string, claims jwt.MapClaims) {
+func parseClaim(tokenString string) jwt.MapClaims {
+	claims := jwt.MapClaims{}
 	token := TokenClaim{}
 	err := json.Unmarshal([]byte(tokenString), &token)
 	if err != nil {
@@ -127,6 +127,7 @@ func parseClaim(tokenString string, claims jwt.MapClaims) {
 			claims[typesOf.Field(i).Name] = values.Field(i).Interface()
 		}
 	}
+	return claims
 }
 
 func getDerivedEncryptionKey() []byte {
