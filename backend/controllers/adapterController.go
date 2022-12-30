@@ -40,10 +40,7 @@ func CreateUserAdapter(c *fiber.Ctx) error {
 	user := models.User{Name: u.Name, Email: u.Email, Image: u.Image}
 	initializers.DB.Create(&user)
 
-	return c.JSON(fiber.Map{
-		"id":    user.ID,
-		"email": user.Email,
-	})
+	return c.JSON(user)
 }
 
 /* options: byId, byEmail, byAccount */
@@ -53,47 +50,38 @@ func GetUserAdapter(c *fiber.Ctx) error {
 	userId := c.Query("userId")
 	email := c.Query("email")
 	account := c.Query("accountId")
-	providerType := c.Query("providerType")
-
-	externalId, err := uuid.Parse(userId)
-	if err != nil {
-		return c.JSON(fiber.Map{"msg": "server error"})
-	}
 
 	user := models.User{}
 	if userId != "" {
+		externalId, err := uuid.Parse(userId)
+		if err != nil {
+			return c.JSON(errorResponse("server error"))
+		}
 		initializers.DB.Where(&models.User{ExternalID: externalId}).First(&user)
 		if user == (models.User{}) {
-			return c.JSON(fiber.Map{"msg": "Not Found"})
+			return c.JSON(notFoundResponse())
 		}
-		return c.JSON(user)
+		return c.JSON(userResponse(&user))
 	}
 
 	if email != "" {
 		initializers.DB.Where(&models.User{Email: email}).First(&user)
 		if user == (models.User{}) {
-			return c.JSON(fiber.Map{"msg": "Not Found"})
+			return c.JSON(notFoundResponse())
 		}
-		return c.JSON(user)
+		return c.JSON(userResponse(&user))
 	}
 
 	if account != "" {
-		if providerType == "github" {
-			initializers.DB.Where(&models.User{GithubId: account}).First(&user)
-		}
+		// to-do: need to add checks for provider type
+		initializers.DB.Where(&models.User{GithubId: account}).First(&user)
 		if user == (models.User{}) {
-			return c.JSON(fiber.Map{"msg": "Not Found"})
+			return c.JSON(notFoundResponse())
 		}
-		return c.JSON(fiber.Map{
-			"id":    user.ID,
-			"email": user.Email,
-			"image": user.Image,
-		})
+		return c.JSON(userResponse(&user))
 	}
 
-	return c.JSON(fiber.Map{
-		"msg": "Not Found",
-	})
+	return c.JSON(notFoundResponse())
 }
 
 type linkAccountPayload struct {
@@ -127,8 +115,5 @@ func LinkAccountAdapter(c *fiber.Ctx) error {
 	user.GithubId = link.ProviderAccountId
 	initializers.DB.Save(&user)
 
-	return c.JSON(fiber.Map{
-		"id":       user.ID,
-		"githubId": user.GithubId,
-	})
+	return c.JSON(userResponse(&user))
 }

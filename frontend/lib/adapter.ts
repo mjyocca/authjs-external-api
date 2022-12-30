@@ -49,9 +49,8 @@ export function MyAdapter(config: AdapterConfig): Adapter {
         body: JSON.stringify({ name, email, image }),
       });
       log({ result });
-
-      if (result.msg == 'Not Found') return user as AdapterUser;
-      return { emailVerified: null, ...result } as AdapterUser;
+      if (!result.data) return user as AdapterUser;
+      return { emailVerified: null, ...result.data } as AdapterUser;
     },
     async getUser(id) {
       log('adapter.getUser', { id });
@@ -60,8 +59,8 @@ export function MyAdapter(config: AdapterConfig): Adapter {
       });
       log({ result });
 
-      if (result.msg == 'Not Found') return null;
-      return result;
+      if (!result.data) return null;
+      return result.data;
     },
     async getUserByEmail(email) {
       log('adapter.getUserByEmail', { email });
@@ -70,8 +69,8 @@ export function MyAdapter(config: AdapterConfig): Adapter {
       });
       log({ result });
 
-      if (result.msg == 'Not Found') return null;
-      return result;
+      if (!result.data) return null;
+      return result.data;
     },
     async getUserByAccount({ providerAccountId, provider }) {
       log('adapter.getUserByAccount', { providerAccountId, provider });
@@ -84,9 +83,8 @@ export function MyAdapter(config: AdapterConfig): Adapter {
         }
       );
       log({ result });
-
-      if (result.msg == 'Not Found') return null;
-      return result;
+      if (!result.data) return null;
+      return result.data;
     },
     async linkAccount(account) {
       log('adapter.linkAccount', { account });

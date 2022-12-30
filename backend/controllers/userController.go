@@ -8,35 +8,14 @@ import (
 )
 
 func UserIndex(c *fiber.Ctx) error {
-	userClaims := c.Locals("user").(jwt.MapClaims)
+	claims := c.Locals("user").(jwt.MapClaims)
+	providerId := claims["ProviderAccountId"].(string)
+	providerType := claims["Provider"].(string)
+
 	user := new(models.User)
-	initializers.DB.Find(&user, "github_id = ?", userClaims["ProviderAccountId"].(string))
-	return c.JSON(fiber.Map{
-		"data": user,
-	})
-}
-
-type User struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	GithubId string `json:"githubId"`
-}
-
-func UserPost(c *fiber.Ctx) error {
-	user := new(User)
-
-	if err := c.BodyParser(user); err != nil {
-		return err
+	if providerType == "github" {
+		initializers.DB.Find(&user, "github_id = ?", providerId)
 	}
 
-	userClaims := c.Locals("user").(jwt.MapClaims)
-	providerAccountId := userClaims["ProviderAccountId"].(string)
-	providerType := userClaims["Provider"].(string)
-
-	return c.JSON(fiber.Map{
-		"Name":       user.Name,
-		"Email":      user.Email,
-		"provider":   providerType,
-		"providerId": providerAccountId,
-	})
+	return c.JSON(userResponse(user))
 }

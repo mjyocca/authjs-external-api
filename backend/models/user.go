@@ -15,7 +15,7 @@ type User struct {
 	UpdatedAt time.Time  `json:"updatedAt"`
 	DeletedAt *time.Time `gorm:"index" json:"deletedAt"`
 
-	ExternalID uuid.UUID `gorm:"type:uuid;index" json:"-"`
+	ExternalID uuid.UUID `gorm:"type:uuid;index" json:"id"`
 	Name       string    `json:"name"`
 	Email      string    `json:"email"`
 	Image      string    `json:"image"`
@@ -39,11 +39,9 @@ func (user *User) MarshalJSON() ([]byte, error) {
 	type UserAlias User
 	return json.Marshal(&struct {
 		*UserAlias
-		Providers []string  `json:"providers"`
-		ID        uuid.UUID `json:"id"`
+		Providers []string `json:"providers"`
 	}{
 		UserAlias: (*UserAlias)(user),
 		Providers: user.Providers(),
-		ID:        user.ExternalID,
 	})
 }
