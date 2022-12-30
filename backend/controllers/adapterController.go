@@ -15,7 +15,7 @@ type createUser struct {
 	Image string `json:"image"`
 }
 
-func CreateUser(c *fiber.Ctx) error {
+func CreateUserAdapter(c *fiber.Ctx) error {
 	log.Println("adapter CreateUser")
 
 	u := new(createUser)
@@ -46,7 +46,7 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 /* options: byId, byEmail, byAccount */
-func GetUser(c *fiber.Ctx) error {
+func GetUserAdapter(c *fiber.Ctx) error {
 	log.Println("adapter GetUser")
 
 	userId := c.Query("userId")
@@ -88,7 +88,7 @@ type linkAccountPayload struct {
 	UserId            int64 `json:"userId"`
 }
 
-func LinkAccount(c *fiber.Ctx) error {
+func LinkAccountAdapter(c *fiber.Ctx) error {
 	log.Println("adapter LinkAccount")
 	link := new(linkAccountPayload)
 	if err := c.BodyParser(link); err != nil {

@@ -28,9 +28,9 @@ func main() {
 
 	/* NextAuth Adapter routes */
 	nextAuthAdapter.Route("/", func(route fiber.Router) {
-		route.Get("/user", controllers.GetUser)
-		route.Post("/user", controllers.CreateUser)
-		route.Patch("/user", controllers.LinkAccount)
+		route.Get("/user", controllers.GetUserAdapter)
+		route.Post("/user", controllers.CreateUserAdapter)
+		route.Patch("/user", controllers.LinkAccountAdapter)
 	})
 
 	/* API routes */
