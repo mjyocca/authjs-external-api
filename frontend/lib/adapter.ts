@@ -49,6 +49,8 @@ export function MyAdapter(config: AdapterConfig): Adapter {
         body: JSON.stringify({ name, email, image }),
       });
       log({ result });
+
+      if (result.msg == 'Not Found') return user as AdapterUser;
       return { emailVerified: null, ...result } as AdapterUser;
     },
     async getUser(id) {
@@ -57,22 +59,28 @@ export function MyAdapter(config: AdapterConfig): Adapter {
         method: 'GET',
       });
       log({ result });
+
+      if (result.msg == 'Not Found') return null;
       return result;
     },
     async getUserByEmail(email) {
       log('adapter.getUserByEmail', { email });
-      const result = await client(`api/adapter/user?email=${email}`, {
+      const result = await client(`api/adapter/user?email=${encodeURIComponent(email)}`, {
         method: 'GET',
       });
       log({ result });
+
+      if (result.msg == 'Not Found') return null;
       return result;
     },
     async getUserByAccount({ providerAccountId, provider }) {
       log('adapter.getUserByAccount', { providerAccountId, provider });
-      const result = await client(`api/adapter/user?accountId=${providerAccountId}`, {
+      const result = await client(`api/adapter/user?accountId=${encodeURIComponent(providerAccountId)}`, {
         method: 'GET',
       });
       log({ result });
+
+      if (result.msg == 'Not Found') return null;
       return result;
     },
     async linkAccount(account) {

@@ -56,16 +56,25 @@ func GetUserAdapter(c *fiber.Ctx) error {
 	user := models.User{}
 	if userId != "" {
 		initializers.DB.First(&user, userId)
+		if user == (models.User{}) {
+			return c.JSON(fiber.Map{"msg": "Not Found"})
+		}
 		return c.JSON(user)
 	}
 
 	if email != "" {
 		initializers.DB.Where(&models.User{Email: email}).First(&user)
+		if user == (models.User{}) {
+			return c.JSON(fiber.Map{"msg": "Not Found"})
+		}
 		return c.JSON(user)
 	}
 
 	if account != "" {
 		initializers.DB.Where(&models.User{GithubId: account}).First(&user)
+		if user == (models.User{}) {
+			return c.JSON(fiber.Map{"msg": "Not Found"})
+		}
 		return c.JSON(fiber.Map{
 			"id":    user.ID,
 			"email": user.Email,

@@ -3,36 +3,47 @@ package models
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type User struct {
 	// gorm.Model
-	ID        uint       `gorm:"primary_key"`
+	ID        uint       `gorm:"primary_key" json:"-"`
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	DeletedAt *time.Time `gorm:"index" json:"deletedAt"`
 
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Image    string `json:"image"`
-	GithubId string `json:"githubId"`
+	ExternalID uuid.UUID `gorm:"type:uuid;index" json:"-"`
+	Name       string    `json:"name"`
+	Email      string    `json:"email"`
+	Image      string    `json:"image"`
+	GithubId   string    `json:"githubId"`
 }
 
-func (u *User) Providers() []string {
+func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
+	user.ExternalID = uuid.New()
+	return
+}
+
+func (user *User) Providers() []string {
 	providers := []string{}
-	if u.GithubId != "" {
+	if user.GithubId != "" {
 		providers = append(providers, "github")
 	}
 	return providers
 }
 
-func (u *User) MarshalJSON() ([]byte, error) {
+func (user *User) MarshalJSON() ([]byte, error) {
 	type UserAlias User
 	return json.Marshal(&struct {
 		*UserAlias
-		Providers []string `json:"providers"`
+		Providers []string  `json:"providers"`
+		ID        uuid.UUID `json:"id"`
 	}{
-		UserAlias: (*UserAlias)(u),
-		Providers: u.Providers(),
+		UserAlias: (*UserAlias)(user),
+		Providers: user.Providers(),
+		ID:        user.ExternalID,
 	})
 }
