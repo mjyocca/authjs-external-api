@@ -33,6 +33,9 @@ func (user *User) Providers() []string {
 	if user.GithubId != "" {
 		providers = append(providers, "github")
 	}
+	if user.GoogleId != "" {
+		providers = append(providers, "google")
+	}
 	return providers
 }
 

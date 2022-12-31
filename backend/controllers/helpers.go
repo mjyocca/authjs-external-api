@@ -10,3 +10,16 @@ func getUUID(userId string) (uuid.UUID, error) {
 	}
 	return id, nil
 }
+
+// move to utils/helpers package
+var providerFieldMapping = map[string]string{
+	"github": "github_id",
+	"google": "google_id",
+}
+
+type NextAuthProvider string
+
+const (
+	Github NextAuthProvider = "github"
+	Google NextAuthProvider = "google"
+)

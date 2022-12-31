@@ -40,13 +40,14 @@ func (h *Handler) GetUserAdapter(c *fiber.Ctx) error {
 	// or conditions to search by
 	conditions := map[string]interface{}{}
 	if userId != "" {
-		conditions["ExternalID"] = userId
+		conditions["external_id"] = userId
 	}
 	if email != "" {
-		conditions["Email"] = email
+		conditions["email"] = email
 	}
 	if providerId != "" && providerType != "" {
-		conditions[providerType] = providerId
+		fieldName := providerFieldMapping[providerType]
+		conditions[fieldName] = providerId
 	}
 	u, err := h.userStore.GetUserByORConditions(conditions)
 	if err != nil {
@@ -85,7 +86,8 @@ func (h *Handler) LinkAccountAdapter(c *fiber.Ctx) error {
 	switch provider := req.Provider; provider {
 	case "github":
 		user.GithubId = req.ProviderAccountId
-		// case "Google":
+	case "google":
+		user.GoogleId = req.ProviderAccountId
 	}
 
 	if err := h.userStore.Update(user); err != nil {

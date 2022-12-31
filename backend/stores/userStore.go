@@ -51,7 +51,15 @@ func (us *UserStore) GetByEmail(email string) (*model.User, error) {
 
 func (us *UserStore) GetByProviderID(providerId string, providerType string) (*model.User, error) {
 	var m model.User
-	if err := us.db.Find(&m, &model.User{GithubId: providerId}).Error; err != nil {
+	condition := &model.User{}
+
+	if providerType == "github" {
+		condition.GithubId = providerId
+	} else if providerType == "google" {
+		condition.GoogleId = providerId
+	}
+
+	if err := us.db.Find(&m, condition).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -62,6 +70,7 @@ func (us *UserStore) GetByProviderID(providerId string, providerType string) (*m
 
 func (us *UserStore) GetUserByORConditions(fields map[string]interface{}) (*model.User, error) {
 	var m model.User
+	queryDB := us.db.Session(&gorm.Session{})
 
 	count := 0
 	for key, value := range fields {
@@ -69,14 +78,15 @@ func (us *UserStore) GetUserByORConditions(fields map[string]interface{}) (*mode
 			key: value,
 		}
 		if count <= 0 {
-			us.db.Where(clause)
+			queryDB.Where(clause)
 		} else {
-			us.db.Or(clause)
+			queryDB.Or(clause)
 		}
 		count++
 	}
 
-	if err := us.db.First(&m).Error; err != nil {
+	// think this is the problem
+	if err := queryDB.First(&m).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
