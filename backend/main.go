@@ -1,10 +1,11 @@
 package main
 
 import (
-	fiber "github.com/gofiber/fiber/v2"
+	"fmt"
+
 	"github.com/mjyocca/authjs-external-api/backend/controllers"
 	"github.com/mjyocca/authjs-external-api/backend/initializers"
-	"github.com/mjyocca/authjs-external-api/backend/middleware"
+	"github.com/mjyocca/authjs-external-api/backend/router"
 	store "github.com/mjyocca/authjs-external-api/backend/stores"
 )
 
@@ -16,34 +17,18 @@ func init() {
 
 func main() {
 
-	app := fiber.New()
+	app := router.New()
 
-	/* create stores */
+	// create stores
 	userStore := store.NewUserStore(initializers.DB)
 
-	/* init handler */
+	// create handler
 	handler := controllers.NewHandler(userStore)
 
-	/* public routes */
-	app.Get("/health", handler.HealthCheck)
+	// register routes with handlers
+	handler.Register(app)
 
-	/* protected ~ jwt auth middleware */
-	api := app.Group("/api", middleware.Auth(middleware.AuthConfig{}))
-	nextAuthAdapter := api.Group("/adapter", middleware.Adapter)
-
-	/* NextAuth Adapter routes */
-	nextAuthAdapter.Route("/", func(route fiber.Router) {
-		route.Get("/user", handler.GetUserAdapter)
-		route.Post("/user", handler.CreateUserAdapter)
-		route.Patch("/user", handler.LinkAccountAdapter)
-	})
-
-	/* API routes */
-	api.Route("/", func(route fiber.Router) {
-		api.Get("/user", handler.CurrentUser)
-	})
-
-	app.Use(controllers.NotFound)
-
-	app.Listen(":8000")
+	if err := app.Listen(":8000"); err != nil {
+		fmt.Printf("%v", err)
+	}
 }
