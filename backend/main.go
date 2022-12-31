@@ -43,7 +43,7 @@ func main() {
 		api.Get("/user", handler.CurrentUser)
 	})
 
-	app.Use(middleware.NotFound)
+	app.Use(controllers.NotFound)
 
 	app.Listen(":8000")
 }

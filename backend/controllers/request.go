@@ -1,14 +1,20 @@
 package controllers
 
-type userCreateRequest struct {
-	User struct {
-		Name  string `json:"name"`
-		Email string `json:"email"`
-		Image string `json:"image"`
-	} `json:"user"`
+// type userCreateRequest struct {
+// 	User struct {
+// 		Name  string `json:"name"`
+// 		Email string `json:"email"`
+// 		Image string `json:"image"`
+// 	} `json:"data"`
+// }
+
+type userCreateAdapterRequest struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Image string `json:"image"`
 }
 
-type userLinkAccountRequest struct {
+type linkAccountAdapterRequest struct {
 	Provider          string `json:"provider"`
 	Type              string `json:"type"`
 	ProviderAccountId string `json:"providerAccountId"`
