@@ -15,9 +15,14 @@ func (h *Handler) CreateUserAdapter(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse(CannotProcessEntity))
 	}
 	existingUser, _ := h.userStore.GetByEmail(req.Email)
-	if existingUser != (&model.User{}) {
-		return c.Status(http.StatusAlreadyReported).JSON(&existingUser)
+	if *existingUser != (model.User{}) {
+		return c.Status(http.StatusAlreadyReported).JSON(userResponse(existingUser))
 	}
+	// populate data
+	u.Name = req.Name
+	u.Email = req.Email
+	u.Image = req.Image
+
 	if err := h.userStore.Create(&u); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse(CannotProcessEntity))
 	}
@@ -78,7 +83,7 @@ func (h *Handler) LinkAccountAdapter(c *fiber.Ctx) error {
 
 	// update user field(s)
 	switch provider := req.Provider; provider {
-	case "Github":
+	case "github":
 		user.GithubId = req.ProviderAccountId
 		// case "Google":
 	}

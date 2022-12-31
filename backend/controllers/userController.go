@@ -19,7 +19,7 @@ func (h *Handler) CurrentUser(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
 	}
-	if user != nil {
+	if user == nil {
 		return c.Status(http.StatusForbidden).JSON(errorResponse("access is forbidden"))
 	}
 	return c.Status(http.StatusFound).JSON(userResponse(user))

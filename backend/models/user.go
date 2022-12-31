@@ -20,6 +20,7 @@ type User struct {
 	Email      string    `json:"email"`
 	Image      string    `json:"image"`
 	GithubId   string    `json:"githubId"`
+	GoogleId   string    `json:"googleId"`
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {

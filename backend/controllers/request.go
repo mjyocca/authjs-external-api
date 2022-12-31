@@ -21,5 +21,5 @@ type linkAccountAdapterRequest struct {
 	AccessToken       string `json:"access_token"`
 	TokenType         string `json:"token_type"`
 	Scope             string `json:"scope"`
-	UserId            string `json:"id"`
+	UserId            string `json:"userId"`
 }
