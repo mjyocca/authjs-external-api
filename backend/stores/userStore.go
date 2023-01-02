@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	helpers "github.com/mjyocca/authjs-external-api/backend/helpers"
 	model "github.com/mjyocca/authjs-external-api/backend/models"
 	"gorm.io/gorm"
 )
@@ -53,9 +54,9 @@ func (us *UserStore) GetByProviderID(providerId string, providerType string) (*m
 	var m model.User
 	condition := &model.User{}
 
-	if providerType == "github" {
+	if providerType == string(helpers.Github) {
 		condition.GithubId = providerId
-	} else if providerType == "google" {
+	} else if providerType == string(helpers.Google) {
 		condition.GoogleId = providerId
 	}
 

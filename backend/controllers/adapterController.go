@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mjyocca/authjs-external-api/backend/helpers"
 	model "github.com/mjyocca/authjs-external-api/backend/models"
 )
 
@@ -46,7 +47,7 @@ func (h *Handler) GetUserAdapter(c *fiber.Ctx) error {
 		conditions["email"] = email
 	}
 	if providerId != "" && providerType != "" {
-		fieldName := providerFieldMapping[providerType]
+		fieldName := helpers.ProviderFieldMapping[providerType]
 		conditions[fieldName] = providerId
 	}
 	u, err := h.userStore.GetUserByORConditions(conditions)
@@ -68,7 +69,7 @@ func (h *Handler) LinkAccountAdapter(c *fiber.Ctx) error {
 	}
 
 	// parse user id to uuid format
-	userId, err := getUUID(req.UserId)
+	userId, err := helpers.GetUUID(req.UserId)
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse(CannotProcessEntity))
 	}
@@ -84,9 +85,9 @@ func (h *Handler) LinkAccountAdapter(c *fiber.Ctx) error {
 
 	// update user field(s)
 	switch provider := req.Provider; provider {
-	case "github":
+	case string(helpers.Github):
 		user.GithubId = req.ProviderAccountId
-	case "google":
+	case string(helpers.Google):
 		user.GoogleId = req.ProviderAccountId
 	}
 

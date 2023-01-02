@@ -1,6 +1,6 @@
 # Authjs External Api
 
-[Auth.js](https://authjs.dev/) social sign in example with an external API backend written in GO. The GO API server uses JWE (Json Web Encryption) middleware that aligns with the Auth.js/Next-auth Package.
+[Auth.js](https://authjs.dev/) social sign in example with an external API backend written in [GO](https://go.dev/). The GO API server uses JWE (Json Web Encryption) A256GCM middleware that aligns with the Auth.js/Next-auth Package when JWT is enabled.
 
 Authjs Providers:
   - Github
@@ -31,10 +31,25 @@ NEXTAUTH_SECRET=[INFO HERE]
 EXTERNAL_API_ENDPOINT=http://localhost:8000
 ```
 
+Start Frontend Service
+
+*Need pnpm installed*
+```bash
+pnpm install \
+pnpm dev
+```
+
 ## Backend (Go)
 
 Create env file `.env.local`
 
 ```
 NEXTAUTH_SECRET=[INFO HERE]
+```
+
+Start Backend Service
+
+```bash
+cd backend \
+docker compose up
 ```

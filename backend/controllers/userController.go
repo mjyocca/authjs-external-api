@@ -5,12 +5,13 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/mjyocca/authjs-external-api/backend/helpers"
 )
 
 func (h *Handler) CurrentUser(c *fiber.Ctx) error {
 	claims := c.Locals("user").(jwt.MapClaims)
 
-	userId, err := getUUID(claims["Id"].(string))
+	userId, err := helpers.GetUUID(claims["Id"].(string))
 	if err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(errorResponse("cannot process request"))
 	}
