@@ -31,9 +31,7 @@ export const authOptions: NextAuthOptions = {
   jwt: jwtOptions,
   callbacks: {
     jwt: async ({ token, user, account, profile, isNewUser }) => {
-      log('callback.jwt', { token, user, account, profile, isNewUser });
       if (account) {
-        log('callback.jwt.account');
         token.accessToken = account.access_token;
         token.providerAccountId = account.providerAccountId;
         token.provider = account.provider;
@@ -44,7 +42,6 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token, user }: any) {
-      log('callback.session', { session, token, user });
       return session;
     },
   },

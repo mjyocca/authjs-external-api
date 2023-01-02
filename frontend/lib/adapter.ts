@@ -3,8 +3,6 @@ import type { NextAuthOptions } from 'next-auth';
 import { encode, JWT } from 'next-auth/jwt';
 import fetch from './fetch';
 
-const { log } = console;
-
 const encodeJWT = async (token: JWT, maxAge: number) => {
   return await encode({
     token: {
@@ -42,38 +40,31 @@ export function MyAdapter(config: AdapterConfig): Adapter {
 
   return {
     async createUser(user: Omit<AdapterUser, 'id'>) {
-      log('adapter.createUser', { user });
       const { name, email, image } = user;
       const result = await client(`api/adapter/user`, {
         method: 'POST',
         body: JSON.stringify({ name, email, image }),
       });
-      log({ result });
       if (!result.data) return user as AdapterUser;
       return { emailVerified: null, ...result.data } as AdapterUser;
     },
     async getUser(id) {
-      log('adapter.getUser', { id });
       const result = await client(`api/adapter/user?id=${encodeURIComponent(id)}`, {
         method: 'GET',
       });
-      log({ result });
 
       if (!result.data) return null;
       return result.data;
     },
     async getUserByEmail(email) {
-      log('adapter.getUserByEmail', { email });
       const result = await client(`api/adapter/user?email=${encodeURIComponent(email)}`, {
         method: 'GET',
       });
-      log({ result });
 
       if (!result.data) return null;
       return result.data;
     },
     async getUserByAccount({ providerAccountId, provider }) {
-      log('adapter.getUserByAccount', { providerAccountId, provider });
       const result = await client(
         `api/adapter/user?providerId=${encodeURIComponent(providerAccountId)}&providerType=${encodeURIComponent(
           provider
@@ -82,17 +73,14 @@ export function MyAdapter(config: AdapterConfig): Adapter {
           method: 'GET',
         }
       );
-      log({ result });
       if (!result.data) return null;
       return result.data;
     },
     async linkAccount(account) {
-      log('adapter.linkAccount', { account });
       const result = await client(`api/adapter/user`, {
         method: 'PATCH',
         body: JSON.stringify({ ...account }),
       });
-      log({ result });
     },
     // @ts-ignore
     createSession: () => {},
